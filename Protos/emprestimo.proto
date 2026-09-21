@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option csharp_namespace = "BibliotecaApi.Grpc";
+
+package emprestimo;
+
+service EmprestimoGrpc {
+  rpc GetEmprestimo (EmprestimoIdRequest) returns (EmprestimoResponse);
+  rpc ListEmprestimos (EmprestimoEmpty) returns (EmprestimoListResponse);
+  rpc Emprestar (EmprestarRequest) returns (EmprestimoResponse);
+  rpc Devolver (EmprestimoIdRequest) returns (EmprestimoEmpty);
+}
+
+message EmprestimoEmpty {}
+
+message EmprestimoIdRequest {
+  int32 id = 1;
+}
+
+message EmprestimoResponse {
+  int32 id = 1;
+  int32 livroId = 2;
+  string usuarioNome = 3;
+  string dataEmprestimo = 4;
+  string dataDevolucaoPrevista = 5;
+  bool devolvido = 6;
+}
+
+message EmprestimoListResponse {
+  repeated EmprestimoResponse emprestimos = 1;
+}
+
+message EmprestarRequest {
+  int32 livroId = 1;
+  string usuarioNome = 2;
+}

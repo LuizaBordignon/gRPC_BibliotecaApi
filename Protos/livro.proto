@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+option csharp_namespace = "BibliotecaApi.Grpc";
+
+package livro;
+
+service LivroGrpc {
+  rpc GetLivro (LivroIdRequest) returns (LivroResponse);
+  rpc ListLivros (LivroEmpty) returns (LivroListResponse);
+  rpc CreateLivro (CreateLivroRequest) returns (LivroResponse);
+  rpc UpdateLivro (UpdateLivroRequest) returns (LivroEmpty);
+  rpc DeleteLivro (LivroIdRequest) returns (LivroEmpty);
+}
+
+message LivroEmpty {}
+
+message LivroIdRequest {
+  int32 id = 1;
+}
+
+message LivroResponse {
+  int32 id = 1;
+  string titulo = 2;
+  string autor = 3;
+  int32 exemplaresTotais = 4;
+  int32 exemplaresDisponiveis = 5;
+}
+
+message LivroListResponse {
+  repeated LivroResponse livros = 1;
+}
+
+message CreateLivroRequest {
+  string titulo = 1;
+  string autor = 2;
+  int32 exemplaresTotais = 3;
+}
+
+message UpdateLivroRequest {
+  int32 id = 1;
+  string titulo = 2;
+  string autor = 3;
+  int32 exemplaresTotais = 4;
+  int32 exemplaresDisponiveis = 5;
+}
