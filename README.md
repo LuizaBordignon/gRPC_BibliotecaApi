@@ -121,7 +121,8 @@ BibliotecaApi/
 
 ## Integrantes do grupo
 
--  Luiza Moro
-- Ester Frank
+- Luiza Moro
+- Estér Frank
 - Rafael Serafim
 - Bruno Ghisi
+- João Victor Santa Catarina
