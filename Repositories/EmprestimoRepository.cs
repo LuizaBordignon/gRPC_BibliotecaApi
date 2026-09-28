@@ -23,6 +23,10 @@ public class EmprestimoRepository : IEmprestimoRepository
         => await _context.Emprestimos
             .CountAsync(e => e.UsuarioNome == usuarioNome && !e.Devolvido);
 
+    public async Task<int> ContarAtivosPorLivroAsync(int livroId)
+        => await _context.Emprestimos
+            .CountAsync(e => e.LivroId == livroId && !e.Devolvido);
+
     public async Task AddAsync(Emprestimo emprestimo)
     {
         _context.Emprestimos.Add(emprestimo);

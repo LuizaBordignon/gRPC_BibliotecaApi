@@ -7,6 +7,7 @@ public interface IEmprestimoRepository
     Task<Emprestimo?> GetByIdAsync(int id);
     Task<List<Emprestimo>> GetAllAsync();
     Task<int> ContarAtivosPorUsuarioAsync(string usuarioNome);
+    Task<int> ContarAtivosPorLivroAsync(int livroId);
     Task AddAsync(Emprestimo emprestimo);
     Task UpdateAsync(Emprestimo emprestimo);
 }
