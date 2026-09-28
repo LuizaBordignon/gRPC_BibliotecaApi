@@ -41,13 +41,15 @@ Pré-requisito: Docker Desktop instalado e em execução.
 docker-compose up --build
 ```
 
-Sobe dois containers:
+Sobe dois containers (`api` e `db`), que expõem três portas:
 
-| Container | Função | Porta |
-|---|---|---|
-| `api` | Aplicação .NET — REST | 8080 |
-| `api` | Aplicação .NET — gRPC | 8081 |
-| `db` | PostgreSQL 16 | 5432 |
+| Container | Função | Porta | Protocolo |
+|---|---|---|---|
+| `api` | REST + Swagger | 8080 | HTTP/1.1 |
+| `api` | gRPC | 8081 | HTTP/2 (sem TLS) |
+| `db` | PostgreSQL 16 | 5432 | TCP |
+
+> O compose define `ASPNETCORE_ENVIRONMENT=Development`, o que habilita o Swagger e o gRPC Server Reflection.
 
 Migrations do Entity Framework são aplicadas automaticamente na inicialização — não precisa rodar comando manual.
 
@@ -70,14 +72,90 @@ Endpoints principais:
 - `POST /api/Emprestimo` — realiza empréstimo (corpo: `{ "livroId": 1, "usuarioNome": "..." }`)
 - `POST /api/Emprestimo/{id}/devolver` — devolve empréstimo
 
+### Exemplos com curl
+
+```bash
+# Criar um livro com 1 exemplar
+curl -X POST http://localhost:8080/api/Livro \
+  -H "Content-Type: application/json" \
+  -d '{"titulo":"Dom Casmurro","autor":"Machado de Assis","exemplaresTotais":1}'
+
+# Listar livros
+curl http://localhost:8080/api/Livro
+
+# Buscar um livro por ID
+curl http://localhost:8080/api/Livro/1
+
+# Atualizar um livro
+curl -X PUT http://localhost:8080/api/Livro/1 \
+  -H "Content-Type: application/json" \
+  -d '{"titulo":"Dom Casmurro","autor":"Machado de Assis","exemplaresTotais":3}'
+
+# Emprestar o livro 1 para um usuário
+curl -X POST http://localhost:8080/api/Emprestimo \
+  -H "Content-Type: application/json" \
+  -d '{"livroId":1,"usuarioNome":"Maria"}'
+
+# Devolver o empréstimo 1
+curl -X POST http://localhost:8080/api/Emprestimo/1/devolver
+
+# Provocar erro de regra de negócio (livro sem exemplar) -> 400
+curl -i -X POST http://localhost:8080/api/Emprestimo \
+  -H "Content-Type: application/json" \
+  -d '{"livroId":1,"usuarioNome":"Joao"}'
+
+# Provocar erro de não encontrado -> 404
+curl -i http://localhost:8080/api/Livro/999
+
+# Remover um livro
+curl -X DELETE http://localhost:8080/api/Livro/1
+```
+
 ## Testando gRPC
 
-No Postman: nova aba do tipo **gRPC**, servidor `localhost:8081`. Usar **"Use Server Reflection"** para listar os métodos automaticamente, sem precisar importar o `.proto` manualmente.
+O servidor gRPC roda em `localhost:8081`, em HTTP/2 **sem TLS** (por isso `-plaintext`). O Server Reflection está ativo, então não é preciso informar o arquivo `.proto`.
 
 Serviços disponíveis:
 
 - `LivroGrpc` — GetLivro, ListLivros, CreateLivro, UpdateLivro, DeleteLivro
 - `EmprestimoGrpc` — GetEmprestimo, ListEmprestimos, Emprestar, Devolver
+
+### Exemplos com grpcurl
+
+```bash
+# Listar serviços e métodos (via reflection)
+grpcurl -plaintext localhost:8081 list
+grpcurl -plaintext localhost:8081 list livro.LivroGrpc
+
+# Criar um livro com 1 exemplar
+grpcurl -plaintext \
+  -d '{"titulo":"Dom Casmurro","autor":"Machado de Assis","exemplaresTotais":1}' \
+  localhost:8081 livro.LivroGrpc/CreateLivro
+
+# Listar livros
+grpcurl -plaintext -d '{}' localhost:8081 livro.LivroGrpc/ListLivros
+
+# Buscar um livro por ID
+grpcurl -plaintext -d '{"id":1}' localhost:8081 livro.LivroGrpc/GetLivro
+
+# Emprestar o livro 1 para um usuário
+grpcurl -plaintext -d '{"livroId":1,"usuarioNome":"Maria"}' \
+  localhost:8081 emprestimo.EmprestimoGrpc/Emprestar
+
+# Devolver o empréstimo 1
+grpcurl -plaintext -d '{"id":1}' localhost:8081 emprestimo.EmprestimoGrpc/Devolver
+
+# Provocar erro de regra de negócio (livro sem exemplar) -> FailedPrecondition
+grpcurl -plaintext -d '{"livroId":1,"usuarioNome":"Joao"}' \
+  localhost:8081 emprestimo.EmprestimoGrpc/Emprestar
+
+# Provocar erro de não encontrado -> NotFound
+grpcurl -plaintext -d '{"id":999}' localhost:8081 livro.LivroGrpc/GetLivro
+```
+
+### Alternativa: Postman
+
+Nova aba do tipo **gRPC**, servidor `localhost:8081`, e marcar **"Use Server Reflection"** para listar os métodos automaticamente.
 
 ## Cenário de teste da regra de negócio
 
